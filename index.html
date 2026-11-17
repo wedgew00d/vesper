@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>晩鐘の街 VESPER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Shippori+Mincho:wght@400;500;700&family=Shippori+Mincho+B1:wght@800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 単一テーマ：霧の夜。青黒い地に骨色の文字、血の赤は「失うもの」、真鍮は「記憶」だけに使う。
+     レイアウト：題字は縦書き、本文は一段組みの読み物、選択肢は本文の続きとして左罫で並べる。 */
+  --ink:#0c0e13;
+  --fog:#171b24;
+  --bone:#d8d1c2;
+  --ash:#878275;
+  --ember:#b8402f;
+  --brass:#b0914f;
+  --line:rgba(216,209,194,.16);
+  --f-body:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","YuMincho",serif;
+  --f-title:"Shippori Mincho B1","Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-latin:"IM Fell English SC","Times New Roman",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--ink);color:var(--bone);font-family:var(--f-body);font-size:17px;line-height:1.95;overflow:hidden;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+button:focus-visible{outline:1px solid var(--brass);outline-offset:3px}
+#bg{position:fixed;inset:0;width:100%;height:100%;display:block}
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,transparent 35%,rgba(5,6,9,.82) 100%)}
+#rotate{display:none;position:fixed;top:0;left:0;right:0;z-index:9;padding:6px 12px;text-align:center;font-size:12px;letter-spacing:.12em;color:var(--bone);background:rgba(176,145,79,.22);border-bottom:1px solid rgba(176,145,79,.5)}
+@media (orientation:landscape) and (max-height:520px){#rotate{display:block}header.hud{padding-top:38px}#title{padding-top:38px}}
+#hurt{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(184,64,47,.55) 100%)}
+#hurt.on{animation:hurt .9s ease-out}
+#hurt.heal{background:radial-gradient(ellipse at center,transparent 50%,rgba(176,145,79,.35) 100%);animation:hurt 1.2s ease-out}
+@keyframes hurt{0%{opacity:1}100%{opacity:0}}
+.screen{position:fixed;inset:0;display:none}
+.screen.on{display:flex}
+
+/* ── 題字 ── */
+#title{flex-direction:row-reverse;align-items:stretch;justify-content:space-between;padding:clamp(24px,6vh,64px) clamp(20px,7vw,96px);gap:24px}
+.t-name{writing-mode:vertical-rl;font-family:var(--f-title);font-weight:800;font-size:clamp(56px,13vh,128px);line-height:1.05;letter-spacing:.12em;color:var(--bone);text-shadow:0 0 40px rgba(184,64,47,.25)}
+.t-name span{color:var(--ember)}
+.t-side{display:flex;flex-direction:column;justify-content:space-between;min-width:0;max-width:24em}
+.t-latin{font-family:var(--f-latin);font-size:clamp(20px,3.4vw,30px);letter-spacing:.5em;color:var(--ash)}
+.t-latin small{display:block;font-family:var(--f-body);font-size:13px;letter-spacing:.2em;margin-top:10px}
+.t-lead{color:var(--ash);font-size:15px;line-height:2;margin-bottom:28px}
+.t-menu{display:flex;flex-direction:column;gap:4px}
+.t-menu button{font-size:20px;letter-spacing:.3em;padding:8px 0 8px 18px;border-left:1px solid var(--line);transition:border-color .2s,color .2s,padding .2s}
+.t-menu button:hover,.t-menu button:focus-visible{border-left-color:var(--ember);padding-left:26px}
+.t-menu button[disabled]{color:var(--ash);opacity:.45;cursor:default;border-left-color:var(--line);padding-left:18px}
+.t-stat{margin-top:8px;font-size:12px;letter-spacing:.12em;color:var(--ash)}
+.t-after{margin-top:20px;font-size:14px;line-height:2;letter-spacing:.15em;color:#e9d9a8}
+body.dawn .t-name{text-shadow:0 0 44px rgba(240,199,94,.28)}
+body.dawn .t-name span{color:#e9c46a}
+.t-sound{font-size:12px;letter-spacing:.2em;color:var(--bone);margin-left:1em;border-bottom:1px solid var(--line);padding:0 0 1px}
+.t-note{margin-top:22px;font-size:12px;color:var(--ash);letter-spacing:.08em;line-height:1.7}
+
+/* ── 本編 ── */
+#game{flex-direction:column}
+.hud{display:flex;align-items:center;gap:18px 28px;flex-wrap:wrap;padding:14px clamp(16px,5vw,48px);border-bottom:1px solid var(--line);background:linear-gradient(rgba(12,14,19,.9),rgba(12,14,19,.55))}
+.hud .area{font-size:13px;letter-spacing:.25em;color:var(--ash);margin-right:auto}
+.meter{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.3em;color:var(--ash);position:relative}
+.pips{display:flex;gap:5px}
+.pip{width:9px;height:9px;transform:rotate(45deg);border:1px solid var(--bone);background:var(--bone);transition:background .4s,border-color .4s,box-shadow .4s}
+.pip.empty{background:transparent;border-color:rgba(216,209,194,.4)}
+.pip.lost{background:transparent;border:1px dashed rgba(176,145,79,.45)}
+.low .pip:not(.empty):not(.lost){background:var(--ember);border-color:var(--ember);box-shadow:0 0 8px rgba(184,64,47,.8)}
+.bells{display:flex;gap:6px}
+.bell{width:9px;height:9px;border-radius:50%;border:1px solid rgba(216,209,194,.4)}
+.bell.rung{background:var(--ash);border-color:var(--ash)}
+.bell.half{background:linear-gradient(90deg,var(--ash) 50%,transparent 50%)}
+.late .bell.rung{background:var(--ember);border-color:var(--ember);box-shadow:0 0 8px rgba(184,64,47,.7)}
+.delta{position:absolute;right:-6px;top:-18px;font-size:14px;letter-spacing:0;font-variant-numeric:tabular-nums;opacity:0;pointer-events:none}
+.delta.on{animation:delta 1.6s ease-out}
+.delta.neg{color:var(--ember)}.delta.pos{color:var(--brass)}
+@keyframes delta{0%{opacity:0;transform:translateY(6px)}15%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+.hud-btns{display:flex;gap:18px}
+.hud-btns button{font-size:13px;letter-spacing:.25em;color:var(--ash);padding:4px 0;border-bottom:1px solid transparent}
+.hud-btns button:hover{color:var(--bone);border-bottom-color:var(--line)}
+
+#story{flex:1;min-height:0;overflow-y:auto;padding:clamp(24px,6vh,56px) clamp(18px,6vw,48px) 64px;scrollbar-color:var(--fog) transparent}
+.col{max-width:32em;margin:0 auto}
+.col p{margin-bottom:1.15em;text-align:justify;opacity:0;animation:rise .9s ease forwards}
+.col p.said{color:#efe9dc}
+.col p.extra{color:var(--ember)}
+.col p.sep{text-align:center;color:var(--ash);letter-spacing:1em;margin:2.4em 0}
+.col p.note{font-size:13px;line-height:1.8;color:var(--ash);text-align:left;border-left:1px solid var(--brass);padding-left:12px}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.instant .col p,.instant .choices,.instant .ending{animation-duration:.01s!important;animation-delay:0s!important}
+.choices{margin-top:2.2em;display:flex;flex-direction:column;gap:2px;opacity:0;animation:rise .8s ease forwards}
+.choice{display:block;width:100%;padding:11px 14px 11px 20px;border-left:1px solid var(--line);font-size:17px;line-height:1.7;transition:border-color .2s,background .2s,padding .2s}
+.choice:hover,.choice:focus-visible{border-left-color:var(--bone);background:rgba(216,209,194,.05);padding-left:26px}
+.choice.mem{border-left-color:var(--brass)}
+.choice.mem:hover,.choice.mem:focus-visible{background:rgba(176,145,79,.09);border-left-color:var(--brass)}
+.choice .tag{display:block;font-size:11px;letter-spacing:.25em;color:var(--brass);line-height:1.6}
+
+.ending{margin-top:3em;padding-top:2em;border-top:1px solid var(--line);opacity:0;animation:rise 1.2s ease forwards}
+.ending .kind{font-size:12px;letter-spacing:.5em;color:var(--ash)}
+.ending h2{font-family:var(--f-title);font-weight:800;font-size:clamp(34px,8vw,54px);line-height:1.3;letter-spacing:.1em;margin:.15em 0 .5em;text-wrap:balance}
+.ending.death h2{color:var(--ember)}
+.ending.loop h2,.ending.shut h2{color:var(--ash)}
+.ending.true h2{color:#f0c75e;text-shadow:0 0 28px rgba(240,199,94,.35)}
+.ending.true .kind{color:#f0c75e}
+.ending .got{color:var(--brass);font-size:15px;margin-bottom:.4em}
+.ending .got small{display:block;color:var(--ash);font-size:13px}
+.ending .count{font-size:13px;color:var(--ash);letter-spacing:.15em;font-variant-numeric:tabular-nums;margin:1.2em 0 1.6em}
+.ending .note{font-size:13px;color:var(--ash);margin-bottom:1.6em}
+
+#toast{position:fixed;left:16px;right:16px;top:16px;z-index:8;margin:0 auto;width:fit-content;max-width:min(30em,calc(100% - 32px));padding:8px 18px;background:rgba(23,27,36,.94);border:1px solid rgba(176,145,79,.5);color:var(--brass);font-size:13px;line-height:1.6;opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .35s,transform .35s;touch-action:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+#toast.on{opacity:1;pointer-events:auto;transform:none}
+#toast small{display:block;color:var(--ember);font-size:12px}
+
+/* ── 重ね画面 ── */
+.overlay{position:fixed;inset:0;display:none;background:rgba(8,9,13,.975);overflow-y:auto;padding:clamp(24px,6vh,56px) clamp(18px,6vw,48px)}
+.overlay.on{display:block}
+.overlay .col>header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:26px}
+.overlay h2{font-family:var(--f-title);font-weight:800;font-size:28px;letter-spacing:.3em}
+.overlay .close{font-size:14px;letter-spacing:.25em;color:var(--ash)}
+.overlay .close:hover{color:var(--bone)}
+.overlay h3{font-weight:500;font-size:13px;letter-spacing:.4em;color:var(--ash);margin:28px 0 10px;font-variant-numeric:tabular-nums}
+.rec{list-style:none;display:flex;flex-direction:column}
+.rec li{padding:10px 0 10px 16px;border-left:1px solid var(--line);line-height:1.7}
+.rec li small{display:block;color:var(--ash);font-size:13px}
+.rec li.mem{border-left-color:var(--brass)}
+.rec li.truth b{color:var(--ember)}
+.rec li b{font-weight:500}
+.rec li.unknown{color:var(--ash);opacity:.5;letter-spacing:.3em}
+.rec .k{font-size:11px;letter-spacing:.3em;color:var(--ash);margin-right:.8em}
+.rec .k.death{color:var(--ember)}.rec .k.clear{color:var(--bone)}
+.m-list{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.m-list button{font-size:19px;letter-spacing:.25em;padding:10px 0 10px 18px;border-left:1px solid var(--line)}
+.m-list button:hover,.m-list button:focus-visible{border-left-color:var(--bone);padding-left:26px}
+.m-list button small{display:block;font-size:13px;letter-spacing:.1em;color:var(--ash);margin-top:2px}
+.m-list button.danger{color:var(--ash);font-size:15px;margin-top:22px}
+.m-list button.danger.armed{color:var(--ember);border-left-color:var(--ember)}
+.col.wide{max-width:none}
+.c-legend{font-size:13px;color:var(--ash);line-height:1.8;margin-bottom:18px;max-width:40em}
+.c-scroll{overflow-x:auto;padding-bottom:16px;scrollbar-color:var(--fog) transparent;touch-action:pan-x pan-y}
+.c-zoom{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:10px;font-size:13px;color:var(--ash)}
+.c-zoom button{white-space:nowrap;min-width:44px;min-height:36px;padding:4px 12px;border:1px solid var(--line);color:var(--bone);font-size:13px;letter-spacing:.1em}
+.c-zoom button:disabled{color:var(--fog);border-color:transparent}
+.c-scroll svg{display:block;margin:0 auto}
+.c-scroll text{font-family:var(--f-body);font-size:12px;fill:var(--bone);text-anchor:middle;dominant-baseline:central}
+.c-node rect{fill:rgba(23,27,36,.85);stroke:rgba(216,209,194,.35);stroke-width:1}
+.c-node.death rect{stroke:var(--ember)}.c-node.death text{fill:var(--ember)}
+.c-node.clear rect{stroke:var(--bone);stroke-width:1.5}
+.c-node.loop text,.c-node.shut text{fill:var(--ash)}
+#c-final{margin:0 0 14px;padding:12px 16px 4px;border:1px solid rgba(240,199,94,.4);background:rgba(240,199,94,.05);max-width:40em}
+#c-final h4{font-weight:500;font-size:11px;letter-spacing:.4em;color:#f0c75e;margin-bottom:8px}
+#c-final p{font-size:14px;line-height:1.8;color:var(--bone);margin-bottom:.6em;padding-left:12px;border-left:1px solid rgba(240,199,94,.5)}
+.c-node.shut rect{stroke:var(--ash)}
+.c-node.now rect{fill:rgba(176,145,79,.22);stroke:var(--brass);stroke-width:1.5}
+.c-node.unseen rect{fill:none;stroke-dasharray:3 4;stroke:rgba(216,209,194,.3)}
+.c-node.unseen text{fill:var(--ash)}
+.c-node.unseen{cursor:pointer}
+.c-node.unseen rect{pointer-events:all}
+.c-scroll text.c-hint{font-size:10px;fill:var(--ash)}
+.c-node.locked text.c-hint{fill:var(--brass)}
+#c-tip{min-height:1.8em;color:var(--bone)}
+.c-node.locked rect{stroke:rgba(176,145,79,.6)}.c-node.locked text{fill:var(--brass)}
+.c-node.goal rect,.c-node.unseen.goal rect{stroke:#f3ecd9;stroke-width:2;stroke-dasharray:none;fill:rgba(243,236,217,.09);filter:drop-shadow(0 0 5px rgba(243,236,217,.45))}
+.c-node.goal text,.c-node.unseen.goal text{fill:#f3ecd9}
+.c-node.true rect,.c-node.unseen.true rect{stroke:#f0c75e;stroke-width:2.5;stroke-dasharray:none;fill:rgba(240,199,94,.2);filter:drop-shadow(0 0 7px rgba(240,199,94,.7))}
+.c-node.true text,.c-node.unseen.true text{fill:#ffe7a8}
+.c-node.true{cursor:pointer}
+#c-true{color:#f0c75e}
+.c-edge{fill:none;stroke:rgba(216,209,194,.28);stroke-width:1}
+.c-edge.unseen{stroke-dasharray:3 4;stroke:rgba(216,209,194,.2)}
+.recall,.recap{margin-top:2em;padding:14px 16px 6px;border:1px solid rgba(176,145,79,.35);background:rgba(176,145,79,.05);opacity:0;animation:rise .8s ease forwards}
+.recap{opacity:1;animation:none;margin:0 0 1.4em}
+.recall h4,.recap h4{font-weight:500;font-size:11px;letter-spacing:.4em;color:var(--brass);margin-bottom:8px}
+.col .recall p,.col .recap p{opacity:1;animation:none;font-size:14px;line-height:1.8;color:var(--bone);margin-bottom:.7em;text-align:left;padding-left:12px;border-left:1px solid rgba(176,145,79,.5)}
+.recall+.choices{margin-top:1.2em}
+.instant .recall{animation-duration:.01s!important;animation-delay:0s!important}
+.rec li.fresh{border-left-color:var(--brass);color:#f0e6cf}
+.rec li.fresh::before{content:"新";font-size:10px;letter-spacing:.2em;color:var(--brass);margin-right:.9em}
+.unread::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brass);margin-left:6px;vertical-align:middle;box-shadow:0 0 6px var(--brass)}
+.c-tabs{display:flex;gap:18px;margin-bottom:10px}
+.c-tabs button{font-size:14px;letter-spacing:.25em;color:var(--ash);padding:4px 0;border-bottom:1px solid transparent}
+.c-tabs button.on{color:var(--bone);border-bottom-color:var(--brass)}
+.m-help{margin-top:30px;font-size:13px;color:var(--ash);line-height:1.9}
+
+@media (max-width:560px){
+  body{font-size:16px}
+  #title{padding:28px 20px}
+  .t-name{font-size:clamp(52px,11vh,88px)}
+  .hud{gap:10px 20px;padding:10px 16px}
+  .hud .area{flex:1 1 calc(100% - 210px);margin-right:0}
+  .hud-btns{order:1}
+  .meter{order:2}
+  .choice{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .col p,.choices,.ending{animation-duration:.01s!important;animation-delay:0s!important}
+  #hurt.on,#hurt.heal{animation:none}
+}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="vignette"></div>
+<div id="rotate" role="status">縦向きでのプレイを推奨します。端末を縦にすると、読みやすくなります。</div>
+<div id="hurt"></div>
+
+<section id="title" class="screen on">
+  <h1 class="t-name">晩鐘<span>の</span>街</h1>
+  <div class="t-side">
+    <div class="t-latin" id="t-latin">VESPER</div>
+    <div>
+      <p class="t-lead">鐘の音で目が覚める。名前がない。<br>門は北にある。<br>死ねば、記憶だけが残る。</p>
+      <nav class="t-menu">
+        <button id="btn-new">はじめる</button>
+        <button id="btn-cont">つづきから</button>
+        <button id="btn-a2">途中の区画から</button>
+        <button id="btn-chart">道筋</button>
+        <button id="btn-rec">手記</button>
+      </nav>
+      <p class="t-after" id="t-after" hidden>鐘は、もう鳴らない。<br>夜ごと、名を数える。七つと、三つ。</p>
+      <p class="t-stat" id="t-stat" hidden></p>
+      <p class="t-note">性的な示唆、暴力、精神的な支配の描写を含みます。17歳以上推奨。<br>スマホは縦向きでのプレイを推奨します。進行はこのブラウザに保存されます。音は「はじめる」を押すと鳴ります。<button id="t-sound" class="t-sound">音：入</button></p>
+    </div>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <header class="hud">
+    <span class="area" id="area"></span>
+    <div class="meter" id="hp-meter" aria-live="polite"><span>気力</span><div class="pips" id="pips"></div><span class="delta" id="delta"></span></div>
+    <div class="meter" id="bell-meter"><span>鐘</span><div class="bells" id="bells"></div></div>
+    <div class="hud-btns"><button id="g-chart">道筋</button><button id="g-rec">手記</button><button id="g-menu">中断</button></div>
+  </header>
+  <main id="story"><div class="col" id="col"></div></main>
+</section>
+
+<div id="toast" role="status"></div>
+
+<section id="records" class="overlay" aria-label="手記">
+  <div class="col"><header><h2>手記</h2><button class="close" data-close>閉じる</button></header><div id="rec-body"></div></div>
+</section>
+<section id="chart" class="overlay" aria-label="道筋">
+  <div class="col wide"><header><h2>道筋</h2><button class="close" data-close>閉じる</button></header>
+    <p class="c-legend">見た場面と、その先に残っている分かれ道。破線の「？」はまだ見ていない先、真鍮色の「◈」は今の記憶では開かない先。明るい枠は、その区画を抜けられる結末。引き返す道は省いてある。手前の場面を何度も通ると、「？」に条件の手がかりが浮かぶ（3回で一つ、6回ですべて）。「？」を押すと下に表示する。</p>
+    <p class="c-legend" id="c-true" hidden>金色の枠は、最後の区画まで届く抜け方。押すと条件が出る。</p>
+    <div id="c-final" hidden></div>
+    <div class="c-tabs" id="c-tabs"></div>
+    <p class="c-legend" id="c-tip"></p>
+    <div class="c-zoom"><button id="c-fit" type="button">全体</button><button id="c-out" type="button" aria-label="縮小">－</button><button id="c-in" type="button" aria-label="拡大">＋</button><span id="c-pct"></span><span>二本指でも可</span></div>
+    <div class="c-scroll" id="c-scroll"></div>
+  </div>
+</section>
+<section id="entry" class="overlay" aria-label="途中の区画から">
+  <div class="col"><header><h2>途中の区画から</h2><button class="close" data-close>閉じる</button></header>
+    <p class="c-legend">前の区画をどう抜けたかを選ぶ。抜け方ごとに、最も気力が残っていたときの状態を残してある。記憶と手記は今のものを使う。</p>
+    <div id="entry-list"></div>
+  </div>
+</section>
+<section id="menu" class="overlay" aria-label="中断">
+  <div class="col"><header><h2>中断</h2><button class="close" data-close>閉じる</button></header>
+    <div class="m-list">
+      <button data-close>つづける</button>
+      <button id="m-restart">この周をやり直す（記憶と結末は残る）</button>
+      <button id="m-restart1">第一区画の目覚めからやり直す</button>
+      <button id="m-a2">途中の区画から始める</button>
+      <button id="m-title">題字へ戻る</button>
+      <button id="m-sound">音：入</button>
+      <button id="m-wipe" class="danger">全リセット（手記・記憶・結末・途中経過をすべて消す）</button>
+    </div>
+    <p class="m-help">気力が尽きると死ぬ。死んでも、得た記憶は次の目覚めに持ち越される。記憶は新しい選択肢を開く（真鍮色の罫）。ただし真相に触れる記憶は、気力の上限を削る。<br>鐘は時間。手間のかかる行動で進み、街と人を変える。第二・第三区画では、通りから別の場所へ動くだけでも進み（移動三度で鐘ひとつ）、鐘が鳴るたびに気力が1削れる。<br>手記には、知ったことと、したことが書き加えられていく。区画を抜けたあとに死ぬと、その区画の冒頭から目を覚ます。第一区画からやり直しても、踏破済みの区画の冒頭へはいつでも戻れる。<br>最終区画では、誘いを退けると気力を2失い、誘いに負けると3戻る。同じ相手に三度負けると、その相手のものになる。</p>
+  </div>
+</section>
+
+<script src="scenario.js"></script>
+<script src="scenario_a2.js"></script>
+<script src="scenario_a3.js"></script>
+<script src="scenario_a4.js"></script>
+<script src="codex.js"></script>
+<script src="rules.js"></script>
+<script>
+(() => {
+  const sc = SCENARIO, R = RULES, KEY = 'vesper_proto_v1';
+  const $ = id => document.getElementById(id);
+  const KIND = { death: '死', loop: '忘却', clear: '踏破', shut: '閉門', true: '生還' };
+  const areaOf = id => sc.nodes[id].area;
+
+  // ── 保存（このブラウザだけ。使えない環境ではメモリ上で動く） ──
+  const blank = () => ({ mems: [], ends: [], seen: [], visits: {}, run: null, cp: null, cps: {}, codexKnown: null, codexRead: [], muted: false, debug: false });
+  // 途中の区画から始めるときの入り方。key は store.cps のキー
+  const ENTRY = {
+    c_alone: { area: 'a2', label: '独りで抜けた', flags: [] },
+    c_together: { area: 'a2', label: 'イレーネを連れて抜けた', flags: ['with_irene'] },
+    c_blood: { area: 'a2', label: 'イレーネを手にかけて抜けた', flags: ['dagger', 'irene_killed'] },
+    a3_alone: { area: 'a3', label: '独りで抜けた', flags: [] },
+    a3_irene: { area: 'a3', label: 'イレーネと抜けた', flags: ['irene'] },
+    a3_hilde: { area: 'a3', label: 'ヒルデと抜けた（正体を隠して）', flags: ['hilde'] },
+    a3_knows: { area: 'a3', label: 'ヒルデと抜けた（正体を知られて）', flags: ['hilde', 'hilde_knows'] },
+    a3_both: { area: 'a3', label: '二人と抜けた（ヒルデは正体を知らない）', flags: ['hilde', 'irene'] },
+    a3_both_knows: { area: 'a3', label: '二人と抜けた（ヒルデは正体を知っている）', flags: ['hilde', 'hilde_knows', 'irene'] },
+    a4_clean: { area: 'a4', label: 'ヴィオラは生きている。借りなし（血で払った）', flags: ['bled', 'viola'], hp: 4 },
+    a4_debt: { area: 'a4', label: 'ヴィオラは生きている。借りあり（すでに一度負けている）', flags: ['debt', 'viola'], hp: 6 },
+    a4_dead: { area: 'a4', label: 'ヴィオラを殺して来た', flags: ['bled'], hp: 4 }
+  };
+  // 記録がないときに、踏破済みの結末から入り方を推定する
+  const GUESS = { c_alone: 'c_alone', c_together: 'c_together', c_blood: 'c_blood', c_gap: 'a3_alone', c_king: 'a3_alone', c_blade: 'a3_alone', c_escort: 'a3_hilde', c_leash: 'a3_knows' };
+  function entryKey(cp, endId) {
+    if (cp.area === 'a2') return endId;
+    const f = cp.flags;
+    if (cp.area === 'a4') return !f.includes('viola') ? 'a4_dead' : f.includes('debt') ? 'a4_debt' : 'a4_clean';
+    return f.includes('irene') && f.includes('hilde') ? (f.includes('hilde_knows') ? 'a3_both_knows' : 'a3_both') : f.includes('hilde_knows') ? 'a3_knows' : f.includes('hilde') ? 'a3_hilde' : f.includes('irene') ? 'a3_irene' : 'a3_alone';
+  }
+  let store = blank();
+  function load() {
+    try { const j = JSON.parse(localStorage.getItem(KEY)); if (j) store = Object.assign(store, j); } catch (e) {}
+    // 回数の記録がない旧データは、見た場面を3回通った扱いにする
+    for (const id of store.seen) if (store.visits[id] == null) store.visits[id] = 3;
+    store.seen = store.seen.filter(id => sc.nodes[id]);
+    if (store.run && !sc.nodes[store.run.node]) store.run = null;
+    if (!store.codexKnown) store.codexKnown = codexOpen();
+    // 開始状態の記録がない踏破済みの入り方は、気力8の推定値で補う
+    if (store.cp && store.cp.from && !store.cp.key) store.cp.key = store.cp.from;
+    for (const k in store.cps) if (!store.cps[k].key) store.cps[k].key = k;
+    // 以前の版では「二人と」が一つにまとまっていたので、正体を知られている記録は移す
+    if (store.cps.a3_both && store.cps.a3_both.flags.includes('hilde_knows')) { store.cps.a3_both_knows = Object.assign(store.cps.a3_both, { key: 'a3_both_knows' }); delete store.cps.a3_both; }
+    if (store.cp && store.cp.key && !store.cps[store.cp.key]) store.cps[store.cp.key] = store.cp;
+    // 最終区画は、文章やルートの確認用に、三通りの入り方を最初から用意しておく
+    for (const k of ['a4_clean', 'a4_debt', 'a4_dead']) if (!store.cps[k]) store.cps[k] = { area: 'a4', hp: ENTRY[k].hp, flags: ENTRY[k].flags.slice().sort(), key: k, guess: true, test: true };
+    for (const end in GUESS) { const k = GUESS[end]; if (store.ends.includes(end) && !store.cps[k]) store.cps[k] = { area: ENTRY[k].area, hp: ENTRY[k].area === 'a2' ? 8 : 7, flags: ENTRY[k].flags.slice().sort(), key: k, guess: true }; }
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  let s = null;            // 現在の周の状態
+  let screen = 'title';
+
+  function show(name) {
+    screen = name;
+    $('title').classList.toggle('on', name === 'title');
+    $('game').classList.toggle('on', name === 'game');
+    const cleared = store.ends.includes('t_true');
+    document.body.classList.toggle('dawn', name === 'title' && cleared);
+    $('t-after').hidden = !cleared;
+    if (cleared) { const falls = Object.keys(sc.nodes).reduce((a, id) => { const e = sc.nodes[id].end; return a + (e && !['clear', 'true'].includes(sc.ends[e.id].kind) ? (store.visits[id] || 0) : 0); }, 0);
+      $('t-stat').textContent = `生還 ${store.visits.t_true || 1}回　／　倒れた数 ${falls}` + (store.best != null ? `　／　最短 ${store.best}手` : ''); }
+    $('t-stat').hidden = !cleared;
+    if (name === 'title') { $('btn-cont').disabled = !store.run; $('btn-a2').style.display = anyEntry() ? '' : 'none'; }
+    audio.scene(name === 'title' ? null : (s ? areaOf(s.node) : 'a1'), false);
+    if (name === 'title') audio.lullaby(false);
+    badge();
+  }
+
+  // ── 計器 ──
+  function drawHud() {
+    const max = R.maxHp(sc, s.mems, s.flags), hp = Math.max(0, s.hp);
+    let h = '';
+    for (let i = 0; i < R.BASE_HP; i++) h += `<i class="pip ${i >= max ? 'lost' : i >= hp ? 'empty' : ''}"></i>`;
+    $('pips').innerHTML = h;
+    $('hp-meter').classList.toggle('low', hp <= 3);
+    $('hp-meter').setAttribute('aria-label', `気力 ${hp} / ${max}`);
+    let b = '';
+    const part = Math.round((s.h || 0) / R.MOVES_PER_BELL * 100);
+    for (let i = 0; i < 5; i++) b += i === s.t && part ? `<i class="bell" style="background:linear-gradient(90deg,var(--ash) ${part}%,transparent ${part}%)"></i>` : `<i class="bell ${i < s.t ? 'rung' : ''}"></i>`;
+    $('bells').innerHTML = b;
+    $('bell-meter').classList.toggle('late', s.t >= 5);
+    $('bell-meter').setAttribute('aria-label', `鐘 ${s.t}`);
+    $('area').textContent = sc.areas[areaOf(s.node)].name;
+  }
+  function flash(d) {
+    if (!d) return;
+    const el = $('delta'), hurt = $('hurt');
+    el.textContent = (d > 0 ? '+' : '') + d;
+    el.className = 'delta ' + (d < 0 ? 'neg' : 'pos');
+    hurt.className = '';
+    void el.offsetWidth;
+    el.classList.add('on');
+    hurt.className = d < 0 ? 'on' : 'heal';
+  }
+  let toastTimer, toastLines = [];
+  function hideToast() { clearTimeout(toastTimer); $('toast').classList.remove('on'); $('toast').style.transform = ''; toastLines = []; }
+  {   // 知らせは、押すか払うと消える
+    const el = $('toast'); let p0 = null;
+    el.addEventListener('pointerdown', e => { p0 = { x: e.clientX, y: e.clientY }; try { el.setPointerCapture(e.pointerId); } catch (_) {} });
+    el.addEventListener('pointermove', e => { if (!p0) return; const dx = e.clientX - p0.x, dy = Math.min(0, e.clientY - p0.y); el.style.transform = `translate(${dx}px,${dy}px)`; });
+    el.addEventListener('pointerup', () => { p0 = null; hideToast(); });
+    el.addEventListener('pointercancel', () => { p0 = null; el.style.transform = ''; });
+  }
+  function toast(html) {
+    if (toastLines[toastLines.length - 1] !== html) toastLines.push(html);
+    toastLines = toastLines.slice(-3);
+    $('toast').innerHTML = toastLines.join('<br>');
+    const hud = document.querySelector('header.hud'), hb = screen === 'game' && hud ? hud.getBoundingClientRect().bottom : 0;
+    $('toast').style.top = (hb > 0 ? hb + 8 : 16) + 'px';
+    $('toast').style.transform = '';
+    $('toast').classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3600);
+  }
+  function syncMems(gained) {
+    if (!gained.length) return;
+    store.mems = s.mems.slice();
+    for (const id of gained) toast(`記憶を得た　${sc.mems[id].title}` + (sc.mems[id].truth ? '<small>知るほどに、気力の上限が削れる</small>' : ''));
+  }
+
+  // ── 手記 ──
+  function codexOpen() {
+    const seen = new Set(store.seen), out = [];
+    for (const sec of sc.codex) for (const l of sec.lines) if (l.seen.some(id => seen.has(id))) out.push(l.id);
+    return out;
+  }
+  const codexLine = id => { for (const sec of sc.codex) for (const l of sec.lines) if (l.id === id) return l; };
+  function codexSync() {
+    const now = codexOpen(), fresh = now.filter(id => !store.codexKnown.includes(id));
+    if (!fresh.length) return;
+    store.codexKnown = now;
+    const secs = [...new Set(fresh.map(id => sc.codex.find(sec => sec.lines.some(l => l.id === id)).title))];
+    toast(`手記に書き加えた　${secs.join('、')}`);
+    badge();
+  }
+  function badge() {
+    const n = codexOpen().filter(id => !store.codexRead.includes(id)).length;
+    for (const id of ['g-rec', 'btn-rec']) $(id).classList.toggle('unread', n > 0);
+  }
+
+  // ── 進行 ──
+  // ── 音：ブラウザの音声機能で、その場で合成する（低い持続音、風、鐘、鈍い衝撃、子守歌の断片） ──
+  const audio = (() => {
+    let ctx = null, master = null, drone = null, wind = null;
+    const ROOT = { a1: 73.42, a2: 69.30, a3: 87.31, a4: 55.0 };          // 区画ごとの基音
+    const UPPER = { a1: 1.5, a2: 1.5, a3: 1.26, a4: 2 };                  // 重ねる音程（五度、五度、長三度、オクターブ）
+    const BELL = { a1: 196, a2: 164.81, a3: 233.08, a4: 130.81 };         // 鐘の高さ
+    const LEVEL = 0.6;
+    function init() {
+      if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        ctx = new AC();
+        master = ctx.createGain(); master.gain.value = store.muted ? 0 : LEVEL; master.connect(ctx.destination);
+        // 持続音
+        const g = ctx.createGain(); g.gain.value = 0;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 200; lp.Q.value = 0.7;
+        const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), o3 = ctx.createOscillator();
+        o1.type = 'sawtooth'; o2.type = 'sawtooth'; o3.type = 'sine';
+        for (const o of [o1, o2, o3]) { o.frequency.value = 73.42; o.connect(lp); o.start(); }
+        lp.connect(g); g.connect(master);
+        const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 55; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+        drone = { g, lp, o1, o2, o3 };
+        // 風（低域寄りの雑音）
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate), d = buf.getChannelData(0);
+        let last = 0; for (let i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+        const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.6;
+        const wg = ctx.createGain(); wg.gain.value = 0; src.connect(bp); bp.connect(wg); wg.connect(master); src.start();
+        const wl = ctx.createOscillator(), wlg = ctx.createGain(); wl.frequency.value = 0.07; wlg.gain.value = 260; wl.connect(wlg); wlg.connect(bp.frequency); wl.start();
+        wind = { g: wg };
+      } catch (e) { ctx = null; }
+    }
+    // 区画と気力に合わせて、持続音と風を変える。area が null なら題字用に絞る
+    function scene(area, low) {
+      if (!ctx) return;
+      const t = ctx.currentTime, f = ROOT[area] || 73.42;
+      drone.o1.frequency.setTargetAtTime(f, t, 1.5);
+      drone.o2.frequency.setTargetAtTime(f * 1.008, t, 1.5);
+      drone.o3.frequency.setTargetAtTime(f * (UPPER[area] || 1.5), t, 1.5);
+      drone.g.gain.setTargetAtTime(0, t, 0.8);   // 鳴りつづける低音は使わない。静けさを基調にする
+      drone.lp.frequency.setTargetAtTime(low ? 130 : area === 'a3' ? 330 : 210, t, 1.8);
+      // 風は、聞こえるか聞こえないかの薄い空気の音だけ残す
+      wind.g.gain.setTargetAtTime(!area ? 0.02 : area === 'a3' ? 0.025 : area === 'a4' ? 0.03 : 0.045, t, 1.8);
+      // 気力が乏しいあいだだけ、遠い鼓動が鳴る
+      if (low && area) { if (!beat) { pulse(); beat = setInterval(pulse, 1250); } }
+      else if (beat) { clearInterval(beat); beat = null; }
+    }
+    let beat = null;
+    function pulse() {
+      if (!ctx || ctx.state !== 'running') return;
+      for (const [dt, peak] of [[0, 0.11], [0.27, 0.07]]) {
+        const t0 = ctx.currentTime + 0.02 + dt, o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(92, t0); o.frequency.exponentialRampToValueAtTime(58, t0 + 0.16);
+        g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+        o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.3);
+      }
+    }
+    function tone(freq, t0, dur, peak, type) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(peak, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.1);
+    }
+    // 鐘：倍音が整数倍にならない音を重ねる
+    function bell(n, area) {
+      if (!ctx) return;
+      const base = BELL[area] || 196;
+      for (let k = 0; k < Math.min(n, 5); k++) {
+        const t0 = ctx.currentTime + 0.15 + k * 1.5;
+        for (const [r, a, d] of [[1, 0.2, 5.5], [2.0, 0.11, 4], [2.76, 0.08, 3], [5.4, 0.045, 1.8], [8.93, 0.02, 1.1]]) tone(base * r, t0, d, a);
+      }
+    }
+    // 気力を失ったときの鈍い衝撃
+    function thud() {
+      if (!ctx) return;
+      const t0 = ctx.currentTime + 0.02, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(95, t0); o.frequency.exponentialRampToValueAtTime(38, t0 + 0.5);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(0.5, t0 + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.7);
+      o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.8);
+    }
+    // 子守歌の断片（この作品のために置いた、六音の旋律）
+    // 子守歌。流れる場面が続くあいだは頭に戻さず、同じ節を間を置いて繰り返す。場面を離れたら、鳴っている節の終わりで止む
+    let lullOn = false, lullTimer = null, lullUntil = 0;
+    function phrase(slow) {
+      const step = slow ? 1.25 : 0.95;
+      [440, 523.25, 493.88, 392, 440, 329.63].forEach((f, i) => tone(f, ctx.currentTime + 0.6 + i * step, step * 1.9, 0.07, 'triangle'));
+      return 0.6 + 6 * step + 2.6;   // 次の節までの秒数
+    }
+    function lullaby(on, slow) {
+      if (!ctx) return;
+      lullOn = !!on;
+      if (!on || lullTimer) return;        // すでに鳴っていれば、そのまま続ける
+      const loop = () => {
+        lullTimer = null;
+        if (!lullOn) return;
+        if (ctx.state !== 'running') { lullTimer = setTimeout(loop, 1000); return; }
+        const wait = phrase(slow); lullUntil = ctx.currentTime + wait;
+        lullTimer = setTimeout(loop, wait * 1000);
+      };
+      // 直前の節がまだ鳴っているうちに戻ってきたら、その終わりから続ける
+      const rest = Math.max(0, lullUntil - ctx.currentTime);
+      lullTimer = setTimeout(loop, rest * 1000);
+    }
+    function ending(kind, area) {
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      if (kind === 'true') {
+        // 生還：持続音が開き、明るい和音がゆっくり立ち上がる
+        wind.g.gain.setTargetAtTime(0.09, t, 4);
+        [220, 329.63, 554.37].forEach((f, i) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.06, t + 5 + i); g.gain.linearRampToValueAtTime(0.0001, t + 26); o.connect(g); g.connect(master); o.start(t); o.stop(t + 27); });
+        setTimeout(() => { if (ctx) phrase(true); }, 9000);
+      } else if (kind === 'loop') bell(1, area);
+      else { thud(); if (kind === 'clear') bell(1, area); }
+    }
+    function mute(m) { if (ctx) master.gain.setTargetAtTime(m ? 0 : LEVEL, ctx.currentTime, 0.08); }
+    return { init, scene, bell, thud, lullaby, ending, mute };
+  })();
+  // 子守歌が流れる場面
+  const LULLABY = new Set(['hospice_tend', 'hospice_rest', 'v_inn_irene', 'w_irene1_y', 'w_sword', 'w_hilde2', 'f_irene', 'end_embrace']);
+  function soundLabel() { const t = '音：' + (store.muted ? '切' : '入'); $('m-sound').textContent = t; $('t-sound').textContent = t; }
+  function toggleSound() { store.muted = !store.muted; if (!store.muted) audio.init(); audio.mute(store.muted); soundLabel(); save(); }
+
+  // 生還した後の周は、本文が少し変わり、三人に問いを投げられる
+  function markAgain() { if (store.ends.includes('t_true') && !s.flags.includes('again')) s.flags.push('again'); }
+  function begin() {
+    audio.init();
+    s = R.newRun(sc, store.mems); s.n = 0; markAgain();
+    show('game');
+    go(s.node, s.hp);
+  }
+  function beginFromCp() {
+    if (!store.cp) return begin();
+    audio.init();
+    s = R.fromCp(sc, store.cp, store.mems); s.n = store.cp.n == null ? null : store.cp.n; markAgain();
+    show('game');
+    go(s.node, s.hp);
+  }
+  function choose(c) {
+    const before = s.hp, area = areaOf(s.node), t0 = s.t;
+    if (s.n != null) s.n++;
+    syncMems(R.apply(sc, c.eff, s));
+    const rung = sc.areas[area].pressure ? s.t - t0 : 0;
+    if (s.t > t0) audio.bell(s.t - t0, area);
+    const toll = rung ? [`鐘が${['', 'ひとつ', 'ふたつ', '三つ'][rung] || rung + 'つ'}鳴る。霧が濃くなり、息が削れる。`] : [];
+    if (s.hp <= 0 && !sc.nodes[c.to].end) { s.node = sc.areas[area].collapse; render(s, toll, before); return; }
+    go(c.to, before, toll);
+  }
+  function go(id, hpBefore, lead) {
+    const pre = { ...s, flags: s.flags.slice(), mems: s.mems.slice() };
+    const res = R.enter(sc, id, s);
+    syncMems(res.gained);
+    pre.node = res.id; pre.hp = s.hp;
+    render(pre, (lead || []).concat(res.extra), hpBefore);
+  }
+
+  function noteBlock(cls, head, lines) {
+    const el = document.createElement('div');
+    el.className = cls;
+    el.innerHTML = `<h4>${head}</h4>` + lines.map(t => `<p>${t}</p>`).join('');
+    return el;
+  }
+
+  // view: 本文の条件判定に使う状態（入場時効果を適用する前のフラグ）
+  function render(view, extra, hpBefore) {
+    const id = s.node, n = sc.nodes[id];
+    const seen = store.seen.includes(id);
+    if (!seen) store.seen.push(id);
+    const failsBefore = gateFailCount();
+    store.visits[id] = (store.visits[id] || 0) + 1;
+    if (failsBefore < sc.truePathAfter && gateFailCount() >= sc.truePathAfter) toast('道筋に、最後の区画まで届く抜け方が金色で浮かんだ');
+    // 最終区画で倒れるたびに、道筋の手がかりが増える
+    if (n.end && areaOf(id) === 'a4' && sc.ends[n.end.id].kind !== 'true' && sc.finalHints.some(h => h.after === finalFailCount())) toast('道筋（最終区画）に、手がかりがひとつ増えた');
+    const paras = [];
+    for (const p of extra) paras.push({ t: p, cls: 'extra' });
+    for (const t of n.text || []) {
+      if (typeof t === 'string') paras.push({ t });
+      else if (t.sep) paras.push({ t: '＊', cls: 'sep' });
+      else if (R.check(t.if, view)) paras.push({ t: t.p || t.note, cls: t.note ? 'note' : '' });
+    }
+    const step = seen ? 0.07 : 0.42;
+    const col = $('col');
+    col.innerHTML = '';
+    paras.forEach((p, i) => {
+      const el = document.createElement('p');
+      el.textContent = p.t;
+      if (p.cls) el.className = p.cls;
+      else if (p.t.startsWith('『')) el.className = 'said';
+      el.style.animationDelay = (i * step) + 's';
+      col.appendChild(el);
+    });
+    const tail = (paras.length * step + 0.15) + 's';
+    const open = codexOpen();
+
+    if (n.end) {
+      col.appendChild(endingBlock(n.end, tail));
+      store.run = null;
+    } else {
+      // 選択の前に、手記の該当行を突きつける
+      const recall = (n.recall || []).filter(k => open.includes(k)).map(k => codexLine(k).t);
+      if (recall.length) { const r = noteBlock('recall', '手記より', recall); r.style.animationDelay = tail; col.appendChild(r); }
+      const box = document.createElement('div');
+      box.className = 'choices';
+      box.style.animationDelay = tail;
+      for (const c of R.choices(sc, s)) {
+        const b = document.createElement('button');
+        b.className = 'choice' + (c.viaMem ? ' mem' : '');
+        if (c.viaMem) { const tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = '記憶　' + sc.mems[c.viaMem].title; b.appendChild(tg); }
+        b.appendChild(document.createTextNode(c.label));
+        b.addEventListener('click', e => { e.stopPropagation(); choose(c); });
+        box.appendChild(b);
+      }
+      col.appendChild(box);
+      store.run = { node: s.node, hp: s.hp, t: s.t, h: s.h || 0, c: Object.assign({}, s.c), flags: s.flags.slice(), n: s.n == null ? null : s.n };
+    }
+    codexSync();
+    save();
+    drawHud();
+    if (hpBefore != null) flash(s.hp - hpBefore);
+    audio.scene(areaOf(id), s.hp <= 3 && !sc.nodes[id].end);
+    if (n.end) audio.ending(sc.ends[n.end.id].kind, areaOf(id));
+    else if (hpBefore != null && s.hp < hpBefore) audio.thud();
+    audio.lullaby(LULLABY.has(id), false);
+    const story = $('story');
+    story.classList.remove('instant');
+    story.scrollTop = 0;
+  }
+
+  function endingBlock(end, delay) {
+    const def = sc.ends[end.id], area = areaOf(s.node);
+    const isNew = !store.ends.includes(end.id);
+    if (isNew) store.ends.push(end.id);
+    let got = '';
+    if (end.wipe) {
+      store.mems = []; s.mems = [];
+      got = `<p class="got">すべての記憶を手放した<small>気力の上限は元に戻る。開いていた選択肢は閉じる。手記と結末の記録は残る。</small></p>`;
+    } else if (end.mem) {
+      const m = sc.mems[end.mem];
+      if (!store.mems.includes(end.mem)) {
+        store.mems.push(end.mem);
+        got = `<p class="got">記憶を得た　${m.title}<small>${m.desc}</small></p>`;
+      } else got = `<p class="got" style="color:var(--ash)">${m.title}<small>この記憶は、すでに持っている。</small></p>`;
+    }
+    if (end.next) {
+      // 踏破した入り方ごとに、次の区画の開始状態を残す（気力が同じか高いときだけ上書き）
+      const cp = R.carry(sc, s, end.next, end.id); cp.key = entryKey(cp, end.id); cp.n = s.n == null ? null : s.n;
+      store.cp = cp;
+      if (!store.cps[cp.key] || store.cps[cp.key].guess || cp.hp >= store.cps[cp.key].hp) store.cps[cp.key] = cp;
+    }
+    const el = document.createElement('div');
+    el.className = 'ending ' + def.kind;
+    el.style.animationDelay = delay;
+    el.innerHTML = `<div class="kind">${KIND[def.kind]}${isNew ? '　新しい結末' : ''}</div><h2>${def.title}</h2>${got}` +
+      `<div class="count">結末 ${store.ends.length} / ${Object.keys(sc.ends).length}</div>`;
+    if (def.kind === 'true') {
+      const p = document.createElement('p'); p.className = 'note'; p.textContent = '晩鐘の街　了。これが、ただひとつの生還です。'; el.appendChild(p);
+      // 第一区画から通した周だけ、手数を記録する
+      if (s.n != null) { const first = store.best == null, rec = first || s.n < store.best; if (rec) store.best = s.n; const q = document.createElement('p'); q.className = 'note'; q.textContent = `鐘の音から扉まで　${s.n}手` + (first ? '' : rec ? '（これまでで最短）' : `（最短 ${store.best}手）`); el.appendChild(q); }
+      else { const q = document.createElement('p'); q.className = 'note'; q.textContent = '途中の区画から始めた周は、手数を記録しない。'; el.appendChild(q); }
+    }
+    const btn = (label, fn) => { const b = document.createElement('button'); b.className = 'choice'; b.textContent = label; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); el.appendChild(b); };
+    if (def.kind === 'true') btn('題字へ戻る', () => show('title'));
+    if (end.next) {
+      btn('それでも、先へ進む（' + sc.areas[end.next].short + 'へ）', beginFromCp);
+      btn('第一区画の鐘の音からやり直す', begin);
+    } else if (area !== 'a1' && store.cp && store.cp.area === area) {
+      const A = sc.areas[area];
+      btn(def.kind === 'clear' ? `${A.wake}からやり直す（${A.short}の冒頭）` : `${A.wake}で目を覚ます（${A.short}の冒頭）`, beginFromCp);
+      btn('第一区画の鐘の音からやり直す', begin);
+    } else btn('目を覚ます', begin);
+    if (!end.next && anyEntry()) btn('途中の区画から始める（抜け方を選ぶ）', () => { drawEntry(); open('entry'); });
+    return el;
+  }
+
+  // ── 手記の画面（手記・記憶・結末） ──
+  function drawRecords() {
+    const open = codexOpen(), mk = Object.keys(sc.mems), ek = Object.keys(sc.ends);
+    let h = '';
+    for (const sec of sc.codex) {
+      const got = sec.lines.filter(l => open.includes(l.id));
+      if (!got.length) continue;
+      h += `<h3>${sec.title}　${got.length} / ${sec.lines.length}</h3><ul class="rec">`;
+      for (const l of sec.lines) h += open.includes(l.id)
+        ? `<li class="${store.codexRead.includes(l.id) ? '' : 'fresh'}">${l.t}</li>` : `<li class="unknown">――――</li>`;
+      h += '</ul>';
+    }
+    h += `<h3>記憶　${store.mems.length} / ${mk.length}</h3><ul class="rec">`;
+    for (const id of mk) {
+      const m = sc.mems[id];
+      h += store.mems.includes(id)
+        ? `<li class="mem ${m.truth ? 'truth' : ''}"><b>${m.title}</b><small>${m.desc}${m.truth ? '　気力の上限 −1' : ''}</small></li>`
+        : `<li class="unknown">――――</li>`;
+    }
+    h += `</ul><h3>結末　${store.ends.length} / ${ek.length}</h3><ul class="rec">`;
+    for (const id of ek) {
+      const e = sc.ends[id];
+      h += store.ends.includes(id)
+        ? `<li><span class="k ${e.kind}">${KIND[e.kind]}</span><b>${e.title}</b></li>`
+        : `<li class="unknown"><span class="k">${KIND[e.kind]}</span>？？？</li>`;
+    }
+    $('rec-body').innerHTML = h + '</ul>';
+    store.codexRead = open; save(); badge();
+  }
+
+  // ── 道筋（フローチャート） ──
+  const graphs = {};
+  function graphOf(area) {
+    const cl = store.ends.includes('t_true'), gk = area + (cl ? '+' : '');
+    if (graphs[gk]) return graphs[gk];
+    const hid = id => sc.nodes[id].after && !cl;
+    const A = sc.areas[area], ids = Object.keys(sc.nodes).filter(id => areaOf(id) === area && !sc.nodes[id].router && !hid(id)), out = {};
+    for (const id of ids) {
+      const m = new Map(), n = sc.nodes[id];
+      const add = (to, c) => {
+        if (sc.nodes[to].router) { for (const r of sc.nodes[to].redirect) add(r.to, r.if); return; }
+        if (hid(to)) return;
+        if (!m.has(to)) m.set(to, []); m.get(to).push(c || {});
+      };
+      for (const c of n.choices || []) add(c.to, c.if);
+      for (const r of n.redirect || []) add(r.to, r.if);
+      out[id] = m;
+    }
+    out[A.hub].set(A.collapse, [{ text: '気力が尽きると' }]);
+    // 引き返す辺を除いて、残りを段に並べる
+    const st = {}, fwd = [];
+    (function dfs(u) { st[u] = 1; for (const v of out[u].keys()) { if (st[v] === 1) continue; fwd.push([u, v]); if (!st[v]) dfs(v); } st[u] = 2; })(A.start);
+    const depth = {}; ids.forEach(i => depth[i] = 0);
+    for (let k = 0; k < ids.length; k++) { let ch = false; for (const [u, v] of fwd) if (depth[v] < depth[u] + 1) { depth[v] = depth[u] + 1; ch = true; } if (!ch) break; }
+    return graphs[gk] = { ids, out, fwd, depth, start: A.start };
+  }
+  const HINT = {
+    flag: { dagger: '短剣が要る', key: '門の鍵が要る', cellar_key: '地下の鍵が要る', draught: '薬湯を飲んだ身で', with_irene: 'イレーネを連れて', irene_killed: 'イレーネを手にかけた後', gave_water: '水を与えた周に',
+      with_hilde: 'ヒルデを連れて', wrapped: '印を隠して', close: 'ヒルデと親しくなってから', hairpin: '髪飾りが要る', door_open: '大扉を開けてから', met_hilde: 'ヒルデに会ってから',
+      irene: 'イレーネを連れて', hilde: 'ヒルデを連れて', hilde_knows: 'ヒルデに正体を知られて', pass: '通行証が要る', at_inn: '連れを宿に待たせて', water: '泉の水が要る', spring_open: '真相を聞いてから', heard_truth: '真相を聞いてから', irene_given: 'イレーネを差し出して', again: '生還した後の周で', viola: 'ヴィオラが生きていて', promised: '八人目の約束をしてから', anchor_done: '錨を据えてから', sword_done: '剣を捧げてから', font_water: '水を汲んでおいて', hilde_doll: 'ヒルデが人形になっていて', dosed: 'すでに一度飲ませ直していて', lied_h: 'すでに一度嘘をついていて', ev_v1: 'ヴィオラが来てから', begun: '身廊に戻ると', hilde_blank: 'ヒルデが忘れてから', met_viola: 'ヴィオラに会ってから' },
+    noFlag: { key: '鍵を持たずに', draught: '薬湯を飲まずに', with_irene: 'イレーネを連れずに', irene_killed: 'イレーネを手にかけずに', gave_water: '水を与えずに', beggar_done: '女がいるうちに',
+      with_hilde: 'ヒルデを連れずに', wrapped: '印を隠さずに', close: 'ヒルデと親しくならずに', gave_hairpin: '髪飾りを渡さずに', irene_wait: 'イレーネを待たせずに',
+      irene: 'イレーネを連れずに', hilde: 'ヒルデを連れずに', hilde_knows: 'ヒルデに正体を知られずに', pass: '通行証を持たずに', at_inn: '連れと一緒に', inn_done: '宿でまだ眠らずに', hilde_doll: 'ヒルデが人形でないうちに', sword_done: '剣を捧げる前に', anchor_done: '錨を据える前に', lied_h: 'まだ嘘をついていなければ', dosed: 'まだ飲ませ直していなければ', viola_gone: 'ヴィオラがいるうちに', viola: 'ヴィオラがいなければ', promised: '約束をする前に', night: 'まだ一夜を過ごさずに', bled: 'まだ血を売らずに' },
+    irene: { sane: '彼女が正気のうちに', shift: '彼女が変わり始めてから', mad: '鐘が5つ鳴ってから', gone: '彼女がいなくなってから' }
+  };
+  function hintsOf(c) {
+    const h = [];
+    if (c.text) h.push(c.text);
+    if (c.tMin != null) h.push(`鐘が${c.tMin}つ鳴ってから`);
+    if (c.tMax != null) h.push(`鐘が${c.tMax + 1}つ鳴る前に`);
+    if (c.irene && c.irene.length === 1) h.push(HINT.irene[c.irene[0]]);
+    for (const f of c.flag || []) if (HINT.flag[f]) h.push(HINT.flag[f]);
+    for (const f of c.noFlag || []) if (HINT.noFlag[f]) h.push(HINT.noFlag[f]);
+    if (c.hpMin != null) h.push('気力に余裕があるとき');
+    if (c.hpMax != null) h.push('気力が乏しいとき');
+    if (c.cnt) for (const k in c.cnt) h.push(({ H: 'ヒルデに溺れた数', I: 'イレーネに預けた数', V: 'ヴィオラに溺れた数', J: 'イレーネの嫉妬' })[k] + 'しだい');
+    return h.length ? h : ['選べば開く'];
+  }
+  // 最後の門で何度か失敗すると、最後の区画まで届く抜け方が金色になる
+  const finalFailCount = () => Object.keys(sc.nodes).reduce((a, id) => a + (areaOf(id) === 'a4' && sc.nodes[id].end && sc.ends[sc.nodes[id].end.id].kind !== 'true' ? (store.visits[id] || 0) : 0), 0);
+  const gateFailCount = () => sc.gateFails.reduce((a, id) => a + (store.visits[id] || 0), 0);
+  const trueOpen = () => gateFailCount() >= sc.truePathAfter;
+  let chartArea = 'a1';
+  function drawChart() {
+    const tabs = Object.keys(sc.areas).filter(a => a === 'a1' || store.seen.includes(sc.areas[a].start));
+    $('c-tabs').innerHTML = tabs.length > 1 ? tabs.map(a => `<button data-a="${a}" class="${a === chartArea ? 'on' : ''}">${sc.areas[a].short}</button>`).join('') : '';
+    $('c-tabs').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { chartArea = b.dataset.a; drawChart(); }));
+    const graph = graphOf(chartArea), showTrue = trueOpen();
+    $('c-true').hidden = !showTrue;
+    const fh = chartArea === 'a4' ? sc.finalHints.filter(h => finalFailCount() >= h.after) : [];
+    $('c-final').hidden = !fh.length;
+    $('c-final').innerHTML = '<h4>手がかり</h4>' + fh.map(h => `<p>${h.t}</p>`).join('');
+    const W = 112, H = 34, GX = 14, GY = 46, seen = new Set(store.seen);
+    const vis = new Set(graph.ids.filter(id => seen.has(id))), locked = new Set(), reach = {}, tips = {};
+    for (const [u, v] of graph.fwd) if (seen.has(u) && !seen.has(v)) {
+      vis.add(v); (reach[v] = reach[v] || []).push(...graph.out[u].get(v));
+      const n = store.visits[u] || 0;
+      if (n >= 3 && (!tips[v] || n > tips[v].n)) { const all = hintsOf(graph.out[u].get(v)[0]); tips[v] = { n, list: n >= 6 ? all : all.slice(0, 1), more: n < 6 && all.length > 1 }; }
+    }
+    for (const v in reach) if (reach[v].every(c => (c.mem || []).some(m => !store.mems.includes(m)))) locked.add(v);
+    if (!vis.size) vis.add(graph.start);
+    const layers = [];
+    for (const id of graph.ids) if (vis.has(id)) (layers[graph.depth[id]] = layers[graph.depth[id]] || []).push(id);
+    const rows = layers.filter(Boolean), pos = {};
+    const maxN = Math.max(...rows.map(r => r.length)), width = maxN * (W + GX) - GX + 4, height = rows.length * (H + GY) - GY + 4;
+    const parents = id => graph.fwd.filter(e => e[1] === id && pos[e[0]]).map(e => pos[e[0]].x);
+    rows.forEach((row, r) => {
+      const k = id => { const p = parents(id); return p.length ? p.reduce((a, b) => a + b, 0) / p.length : width / 2; };
+      const sorted = row.map(id => [id, k(id)]).sort((a, b) => a[1] - b[1]).map(a => a[0]);
+      const off = (width - (sorted.length * (W + GX) - GX)) / 2;
+      sorted.forEach((id, i) => pos[id] = { x: off + i * (W + GX) + W / 2, y: 2 + r * (H + GY) + H / 2 });
+    });
+    const now = screen === 'game' && s ? s.node : (store.run ? store.run.node : null);
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="見た場面のつながり">`;
+    for (const [u, v] of graph.fwd) {
+      if (!seen.has(u) || !pos[v]) continue;
+      const a = pos[u], b = pos[v], y1 = a.y + H / 2, y2 = b.y - H / 2, k = (y2 - y1) * .5;
+      svg += `<path class="c-edge ${seen.has(v) ? '' : 'unseen'}" d="M${a.x} ${y1}C${a.x} ${y1 + k},${b.x} ${y2 - k},${b.x} ${y2}"/>`;
+    }
+    for (const id in pos) {
+      const p = pos[id], n = sc.nodes[id], known = seen.has(id);
+      const goal = n.end && ['clear', 'true'].includes(sc.ends[n.end.id].kind);   // 区画を抜けられる結末
+      const tp = (showTrue || chartArea === 'a4') && sc.truePath[id] != null;      // 最後の区画まで届く抜け方
+      const trueTip = tp ? '最後の区画まで届く抜け方。' + sc.truePath[id] : '';
+      const cls = (known ? (n.end ? sc.ends[n.end.id].kind : '') + (id === now ? ' now' : '') : 'unseen' + (locked.has(id) ? ' locked' : '')) + (goal ? ' goal' : '') + (tp ? ' true' : '');
+      const label = known ? sc.names[id] : tp ? (chartArea === 'a4' ? '生還' : '大聖堂へ届く') : goal ? '門の先' : locked.has(id) ? '◈ 記憶が要る' : '？';
+      const tip = !known && tips[id];
+      const full = tip ? (locked.has(id) ? '記憶が要る。' : '') + tip.list.join('、') + (tip.more ? '（ほかにも条件がある。手前をさらに通ると分かる）' : '') : !known ? (locked.has(id) ? '今の記憶では開かない。' : '') + '手がかりはまだない。手前の場面を3回通ると浮かぶ。' : '';
+      svg += `<g class="c-node ${cls}" data-id="${id}" data-tip="${trueTip}${trueTip && full ? '　' : ''}${full}"><rect x="${p.x - W / 2}" y="${p.y - H / 2}" width="${W}" height="${H}"/>` +
+        (tip ? `<text x="${p.x}" y="${p.y - 7}">${label}</text><text class="c-hint" x="${p.x}" y="${p.y + 8}">${tip.list[0]}${tip.list.length > 1 || tip.more ? '…' : ''}</text>` : `<text x="${p.x}" y="${p.y}">${label}</text>`) + '</g>';
+    }
+    const box = $('c-scroll');
+    box.innerHTML = svg + '</svg>';
+    chartW = width; chartH = height; applyZoom();
+    $('c-tip').textContent = '';
+    box.querySelectorAll('.c-node.unseen, .c-node.true').forEach(g => g.addEventListener('click', () => { $('c-tip').textContent = (g.classList.contains('unseen') ? 'この先　' : '') + g.dataset.tip; }));
+    const focus = pos[now] || pos[graph.start];
+    requestAnimationFrame(() => { applyZoom(); box.scrollLeft = Math.max(0, (box.scrollWidth - box.clientWidth) / 2 + (focus ? (focus.x - width / 2) * chartZoom : 0)); });
+  }
+  // 道筋の縮尺。ブラウザの拡大縮小は等倍より小さくできないので、図そのものを縮める
+  let chartZoom = 1, chartW = 0, chartH = 0;
+  const fitZoom = () => Math.min(1, ($('c-scroll').clientWidth - 2) / (chartW || 1));
+  function applyZoom(z, cx) {
+    const box = $('c-scroll'), svg = box.querySelector('svg'); if (!svg) return;
+    const lo = Math.min(fitZoom(), 1), old = chartZoom;
+    chartZoom = Math.max(lo, Math.min(2, z == null ? chartZoom : z));
+    const mid = cx == null ? box.clientWidth / 2 : cx, at = (box.scrollLeft + mid) / (old || 1);
+    svg.setAttribute('width', chartW * chartZoom); svg.setAttribute('height', chartH * chartZoom);
+    box.scrollLeft = Math.max(0, at * chartZoom - mid);
+    $('c-pct').textContent = Math.round(chartZoom * 100) + '%';
+    $('c-fit').textContent = chartZoom <= lo + .001 && lo < 1 ? '等倍' : '全体';
+    $('c-fit').disabled = lo >= 1 && chartZoom === 1;
+    $('c-out').disabled = chartZoom <= lo + .001; $('c-in').disabled = chartZoom >= 2;
+  }
+  $('c-fit').addEventListener('click', () => { const lo = fitZoom(); applyZoom(chartZoom <= lo + .001 ? 1 : lo); });
+  $('c-out').addEventListener('click', () => applyZoom(chartZoom / 1.3));
+  $('c-in').addEventListener('click', () => applyZoom(chartZoom * 1.3));
+  {
+    const box = $('c-scroll'); let pinch = null;
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    box.addEventListener('touchstart', e => { if (e.touches.length === 2) pinch = { d: dist(e.touches), z: chartZoom }; }, { passive: true });
+    box.addEventListener('touchmove', e => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - box.getBoundingClientRect().left;
+      applyZoom(pinch.z * dist(e.touches) / pinch.d, cx);
+    }, { passive: false });
+    box.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+    box.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); applyZoom(chartZoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX - box.getBoundingClientRect().left); }, { passive: false });
+    addEventListener('resize', () => { if ($('c-scroll').querySelector('svg')) applyZoom(); });
+  }
+  function open(id) {
+    if (id === 'records') drawRecords();
+    $(id).classList.add('on');
+    if (id === 'chart') { const cur = screen === 'game' && s ? s.node : store.run ? store.run.node : null; chartArea = cur ? areaOf(cur) : store.cp ? store.cp.area : 'a1'; drawChart(); }
+    $(id).scrollTop = 0;
+  }
+  function closeAll() { document.querySelectorAll('.overlay').forEach(o => o.classList.remove('on')); disarm(); }
+
+  // ── 操作 ──
+  $('btn-new').addEventListener('click', begin);
+  $('btn-cont').addEventListener('click', () => {
+    if (!store.run) return;
+    audio.init();
+    s = { ...store.run, c: Object.assign({}, store.run.c), flags: store.run.flags.slice(), mems: store.mems.slice() };
+    show('game'); render(s, [], null);
+  });
+  // 確認用の仮の入り方は、題字の VESPER を5回押して切り替えたときだけ並べる
+  const entryShown = k => store.cps[k] && (store.debug || !store.cps[k].test);
+  const anyEntry = () => Object.keys(ENTRY).some(entryShown);
+  function drawEntry() {
+    const box = $('entry-list'); box.innerHTML = '';
+    for (const area of Object.keys(sc.areas)) {
+      const keys = Object.keys(ENTRY).filter(k => ENTRY[k].area === area && entryShown(k));
+      if (!keys.length) continue;
+      const h = document.createElement('h3'); h.textContent = `${sc.areas[area].short}から`; box.appendChild(h);
+      const list = document.createElement('div'); list.className = 'm-list'; box.appendChild(list);
+      for (const k of keys) {
+        const cp = store.cps[k], b = document.createElement('button');
+        b.innerHTML = `${ENTRY[k].label}<small>気力 ${Math.min(cp.hp, R.maxHp(sc, store.mems, cp.flags))}、${cp.flags.includes('dagger') ? '短剣あり' : '短剣なし'}${cp.test ? '（確認用の仮の状態）' : cp.guess ? '（記録がないため推定値）' : ''}</small>`;
+        b.addEventListener('click', () => { store.cp = cp; closeAll(); beginFromCp(); });
+        list.appendChild(b);
+      }
+    }
+  }
+  $('btn-a2').addEventListener('click', () => { drawEntry(); open('entry'); });
+  $('m-a2').addEventListener('click', () => { closeAll(); drawEntry(); open('entry'); });
+  $('btn-rec').addEventListener('click', () => open('records'));
+  $('btn-chart').addEventListener('click', () => open('chart'));
+  $('g-chart').addEventListener('click', () => open('chart'));
+  $('g-rec').addEventListener('click', () => open('records'));
+  $('g-menu').addEventListener('click', () => {
+    const inA2 = s && areaOf(s.node) !== 'a1' && store.cp && store.cp.area === areaOf(s.node);
+    $('m-restart').textContent = inA2 ? `この区画の冒頭からやり直す（${sc.areas[areaOf(s.node)].wake}。記憶と結末は残る）` : 'この周をやり直す（記憶と結末は残る）';
+    $('m-restart1').style.display = inA2 ? '' : 'none';
+    $('m-a2').style.display = anyEntry() ? '' : 'none';
+    open('menu');
+  });
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAll));
+  $('m-restart').addEventListener('click', () => { closeAll(); (s && areaOf(s.node) !== 'a1' && store.cp && store.cp.area === areaOf(s.node)) ? beginFromCp() : begin(); });
+  $('m-restart1').addEventListener('click', () => { closeAll(); begin(); });
+  $('m-title').addEventListener('click', () => { closeAll(); show('title'); });
+  $('m-sound').addEventListener('click', toggleSound);
+  $('t-sound').addEventListener('click', toggleSound);
+  let taps = 0, tapTimer;
+  $('t-latin').addEventListener('click', () => {
+    clearTimeout(tapTimer); tapTimer = setTimeout(() => taps = 0, 1500);
+    if (++taps < 5) return;
+    taps = 0; store.debug = !store.debug; save(); show('title');
+    toast('確認用の入り方：' + (store.debug ? '表示する' : '隠す'));
+  });
+  const wipeBtn = $('m-wipe'), WIPE = '全リセット（手記・記憶・結末・途中経過をすべて消す）';
+  function disarm() { wipeBtn.classList.remove('armed'); wipeBtn.textContent = WIPE; }
+  wipeBtn.addEventListener('click', () => {
+    if (!wipeBtn.classList.contains('armed')) { wipeBtn.classList.add('armed'); wipeBtn.textContent = 'もう一度押すと全リセットを実行する。元には戻せない'; return; }
+    store = blank(); store.codexKnown = []; save(); closeAll(); show('title');
+  });
+  $('story').addEventListener('click', () => $('story').classList.add('instant'));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeAll(); return; }
+    if (screen !== 'game' || document.querySelector('.overlay.on')) return;
+    if (e.key === ' ' || e.key === 'Enter') { if (document.activeElement.tagName !== 'BUTTON') $('story').classList.add('instant'); return; }
+    const n = parseInt(e.key, 10);
+    if (n >= 1) { const b = document.querySelectorAll('#col .choice')[n - 1]; if (b) b.click(); }
+  });
+
+  // ── 背景：霧と火の粉 ──
+  (function fog() {
+    const cv = $('bg'), g = cv.getContext('2d');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0, h = 0, dpr = 1;
+    const blobs = Array.from({ length: 7 }, (_, i) => ({ x: Math.random(), y: .35 + Math.random() * .65, r: .28 + Math.random() * .3, sp: (.004 + Math.random() * .006) * (i % 2 ? 1 : -1), ph: Math.random() * 6.28 }));
+    const embers = Array.from({ length: 46 }, () => spawn({}, true));
+    function spawn(p, anywhere) {
+      p.x = Math.random(); p.y = anywhere ? Math.random() : 1.03; p.v = .012 + Math.random() * .03;
+      p.sw = Math.random() * 6.28; p.sz = .5 + Math.random() * 1.1; p.life = .5 + Math.random() * .5; return p;
+    }
+    function size() { dpr = Math.min(devicePixelRatio || 1, 1.5); w = cv.width = innerWidth * dpr; h = cv.height = innerHeight * dpr; }
+    function frame(ms) {
+      const t = ms / 1000;
+      g.globalCompositeOperation = 'source-over';
+      g.fillStyle = '#0c0e13'; g.fillRect(0, 0, w, h);
+      for (const b of blobs) {
+        const x = ((b.x + t * b.sp) % 1.4 + 1.4) % 1.4 - .2, y = b.y + Math.sin(t * .08 + b.ph) * .05;
+        const r = b.r * Math.max(w, h), gr = g.createRadialGradient(x * w, y * h, 0, x * w, y * h, r);
+        gr.addColorStop(0, 'rgba(58,66,84,.17)'); gr.addColorStop(1, 'rgba(58,66,84,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      }
+      const glow = g.createRadialGradient(w * .5, h * 1.15, 0, w * .5, h * 1.15, h * .7);
+      const dawn = document.body.classList.contains('dawn');   // 生還後の題字は、夜明けの色にする
+      glow.addColorStop(0, dawn ? 'rgba(240,199,94,.17)' : 'rgba(184,64,47,.13)'); glow.addColorStop(1, dawn ? 'rgba(240,199,94,0)' : 'rgba(184,64,47,0)');
+      g.fillStyle = glow; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = 'lighter';
+      for (const p of embers) {
+        if (!still) { p.y -= p.v * .016; p.x += Math.sin(t * .7 + p.sw) * .0004; }
+        if (p.y < -.03) spawn(p, false);
+        const a = Math.min(1, p.y * 1.4) * p.life * (.6 + .4 * Math.sin(t * 5 + p.sw));
+        const x = p.x * w, y = p.y * h, r = p.sz * dpr;
+        g.fillStyle = `rgba(255,140,70,${(a * .16).toFixed(3)})`; g.beginPath(); g.arc(x, y, r * 4, 0, 6.28); g.fill();
+        g.fillStyle = `rgba(255,205,150,${(a * .9).toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, 6.28); g.fill();
+      }
+      if (!still && !document.hidden) requestAnimationFrame(frame);
+    }
+    addEventListener('resize', () => { size(); if (still) frame(0); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && !still) requestAnimationFrame(frame); });
+    size(); requestAnimationFrame(frame);
+  })();
+
+  // ── 起動（閲覧中に更新が入っても続きから再開する） ──
+  function start(data) {
+    load();
+    soundLabel();
+    if (data && data.store) { store = Object.assign(store, data.store); store.seen = store.seen.filter(id => sc.nodes[id]); if (!store.codexKnown) store.codexKnown = codexOpen(); }
+    if (data && data.screen === 'game' && store.run && sc.nodes[store.run.node]) { $('btn-cont').click(); return; }
+    show('title');
+  }
+  const hot = window.claude && window.claude.hot;
+  if (hot && hot.snapshot) hot.snapshot(() => ({ store, screen }));
+  if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+})();
+</script>
+</body>
+</html>
